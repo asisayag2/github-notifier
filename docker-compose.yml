@@ -22,7 +22,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://notifier:${DB_PASSWORD}@db:5432/notifier
+      DATABASE_URL: postgresql://notifier:${DB_PASSWORD_ENCODED}@db:5432/notifier
     command: ["npx", "prisma", "migrate", "deploy"]
     restart: "no"
 
@@ -37,7 +37,7 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://notifier:${DB_PASSWORD}@db:5432/notifier
+      DATABASE_URL: postgresql://notifier:${DB_PASSWORD_ENCODED}@db:5432/notifier
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       RESEND_API_KEY: ${RESEND_API_KEY}
       POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-120000}
