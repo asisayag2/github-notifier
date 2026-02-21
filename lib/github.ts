@@ -21,6 +21,79 @@ export interface PRFile {
   patch?: string;
 }
 
+export interface PRSummary {
+  number: number;
+  title: string;
+  body: string;
+  author: string;
+  url: string;
+  branch: string;
+  headSha: string;
+  state: string;
+  merged: boolean;
+}
+
+export async function listOpenPRs(): Promise<PRSummary[]> {
+  const octokit = getOctokit();
+  const { owner, repo } = getRepoOwnerAndName();
+
+  const prs: PRSummary[] = [];
+  let page = 1;
+
+  while (true) {
+    const { data } = await octokit.pulls.list({
+      owner,
+      repo,
+      state: "open",
+      sort: "updated",
+      direction: "desc",
+      per_page: 100,
+      page,
+    });
+
+    if (data.length === 0) break;
+
+    prs.push(
+      ...data.map((pr) => ({
+        number: pr.number,
+        title: pr.title,
+        body: pr.body || "",
+        author: pr.user?.login || "unknown",
+        url: pr.html_url,
+        branch: pr.head.ref,
+        headSha: pr.head.sha,
+        state: pr.state,
+        merged: false,
+      }))
+    );
+
+    if (data.length < 100) break;
+    page++;
+  }
+
+  return prs;
+}
+
+export async function getPRState(
+  prNumber: number
+): Promise<{ state: string; merged: boolean; headSha: string; title: string }> {
+  const octokit = getOctokit();
+  const { owner, repo } = getRepoOwnerAndName();
+
+  const { data } = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
+
+  return {
+    state: data.state,
+    merged: data.merged,
+    headSha: data.head.sha,
+    title: data.title,
+  };
+}
+
 export async function getPRFiles(prNumber: number): Promise<PRFile[]> {
   const octokit = getOctokit();
   const { owner, repo } = getRepoOwnerAndName();

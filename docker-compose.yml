@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: notifier
+      POSTGRES_USER: notifier
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifier -d notifier"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://notifier:${DB_PASSWORD}@db:5432/notifier
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-120000}
+
+volumes:
+  pgdata:
