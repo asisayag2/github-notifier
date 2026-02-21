@@ -87,17 +87,22 @@ async function checkForNewPRs() {
       },
     });
 
-    await sendNewPREmail({
-      prNumber: pr.number,
-      title: pr.title,
-      author: pr.author,
-      url: pr.url,
-      branch: pr.branch,
-      matchResult,
-      filesChanged: details.changedFiles,
-      additions: details.additions,
-      deletions: details.deletions,
-    });
+    try {
+      await sendNewPREmail({
+        prNumber: pr.number,
+        title: pr.title,
+        author: pr.author,
+        url: pr.url,
+        branch: pr.branch,
+        matchResult,
+        filesChanged: details.changedFiles,
+        additions: details.additions,
+        deletions: details.deletions,
+      });
+      console.log(`[Poller] Email sent for new PR #${pr.number}`);
+    } catch (emailErr) {
+      console.error(`[Poller] Failed to send email for PR #${pr.number}:`, emailErr);
+    }
   }
 }
 
@@ -130,12 +135,17 @@ async function checkTrackedPRs() {
       });
 
       if (current.merged) {
-        await sendMergeEmail({
-          prNumber: tracked.prNumber,
-          title: tracked.title,
-          author: tracked.author,
-          url: tracked.url,
-        });
+        try {
+          await sendMergeEmail({
+            prNumber: tracked.prNumber,
+            title: tracked.title,
+            author: tracked.author,
+            url: tracked.url,
+          });
+          console.log(`[Poller] Merge email sent for PR #${tracked.prNumber}`);
+        } catch (emailErr) {
+          console.error(`[Poller] Failed to send merge email for PR #${tracked.prNumber}:`, emailErr);
+        }
       }
       continue;
     }
@@ -173,15 +183,20 @@ async function checkTrackedPRs() {
       },
     });
 
-    await sendCodeChangeEmail({
-      prNumber: tracked.prNumber,
-      title: tracked.title,
-      url: tracked.url,
-      commitSha: current.headSha,
-      filesChanged: fileNames,
-      diffStats,
-      summary,
-    });
+    try {
+      await sendCodeChangeEmail({
+        prNumber: tracked.prNumber,
+        title: tracked.title,
+        url: tracked.url,
+        commitSha: current.headSha,
+        filesChanged: fileNames,
+        diffStats,
+        summary,
+      });
+      console.log(`[Poller] Code change email sent for PR #${tracked.prNumber}`);
+    } catch (emailErr) {
+      console.error(`[Poller] Failed to send code change email for PR #${tracked.prNumber}:`, emailErr);
+    }
   }
 }
 

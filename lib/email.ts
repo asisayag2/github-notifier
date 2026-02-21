@@ -34,7 +34,7 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
   const matchDetails = formatMatchDetails(data.matchResult);
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <notifications@resend.dev>",
+    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] Interesting PR #${data.prNumber}: ${data.title}`,
     html: `
@@ -107,7 +107,7 @@ export async function sendCodeChangeEmail(
       : "";
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <notifications@resend.dev>",
+    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] Changes in PR #${data.prNumber}: ${data.title}`,
     html: `
@@ -151,7 +151,7 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
   const resend = getResend();
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <notifications@resend.dev>",
+    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] PR #${data.prNumber} merged: ${data.title}`,
     html: `
