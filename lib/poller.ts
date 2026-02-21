@@ -8,6 +8,8 @@ import {
 } from "./email";
 
 const DEFAULT_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+const MAX_NEW_PRS_PER_CYCLE = 5;
+const MAX_TRACKED_CHECKS_PER_CYCLE = 10;
 
 let pollingTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -51,7 +53,13 @@ async function checkForNewPRs() {
     )
   );
 
+  let processed = 0;
   for (const pr of openPRs) {
+    if (processed >= MAX_NEW_PRS_PER_CYCLE) {
+      console.log(`[Poller] Reached ${MAX_NEW_PRS_PER_CYCLE} new PRs limit, deferring rest to next cycle`);
+      break;
+    }
+
     if (trackedNumbers.has(pr.number)) continue;
 
     const files = await getPRFiles(pr.number);
@@ -62,7 +70,10 @@ async function checkForNewPRs() {
       files
     );
 
-    if (!matchResult.isInteresting) continue;
+    if (!matchResult.isInteresting) {
+      processed++;
+      continue;
+    }
 
     const details = await getPRDetails(pr.number);
 
@@ -103,6 +114,8 @@ async function checkForNewPRs() {
     } catch (emailErr) {
       console.error(`[Poller] Failed to send email for PR #${pr.number}:`, emailErr);
     }
+
+    processed++;
   }
 }
 
@@ -117,7 +130,13 @@ async function checkTrackedPRs() {
     },
   });
 
+  let checked = 0;
   for (const tracked of trackedPRs) {
+    if (checked >= MAX_TRACKED_CHECKS_PER_CYCLE) {
+      console.log(`[Poller] Reached ${MAX_TRACKED_CHECKS_PER_CYCLE} tracked PR checks limit, deferring rest`);
+      break;
+    }
+    checked++;
     const current = await getPRState(tracked.prNumber);
 
     if (current.state === "closed") {
