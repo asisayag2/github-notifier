@@ -14,6 +14,18 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    build:
+      context: .
+      target: builder
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://notifier:${DB_PASSWORD}@db:5432/notifier
+    command: ["npx", "prisma", "migrate", "deploy"]
+    restart: "no"
+
   app:
     build: .
     restart: unless-stopped
@@ -22,6 +34,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://notifier:${DB_PASSWORD}@db:5432/notifier
       GITHUB_TOKEN: ${GITHUB_TOKEN}
