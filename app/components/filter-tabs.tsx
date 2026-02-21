@@ -13,6 +13,7 @@ const tabs = [
   { key: "open", label: "Open" },
   { key: "merged", label: "Merged" },
   { key: "closed", label: "Closed" },
+  { key: "dismissed", label: "Dismissed" },
 ];
 
 export function FilterTabs({ current, counts, total }: FilterTabsProps) {

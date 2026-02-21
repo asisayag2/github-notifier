@@ -18,6 +18,7 @@ model TrackedPR {
   matchReason  String
   matchDetails String
   status       String     @default("open")
+  openedAt     DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   mergedAt     DateTime?

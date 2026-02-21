@@ -31,6 +31,7 @@ export interface PRSummary {
   headSha: string;
   state: string;
   merged: boolean;
+  createdAt: string;
 }
 
 export async function listOpenPRs(): Promise<PRSummary[]> {
@@ -64,6 +65,7 @@ export async function listOpenPRs(): Promise<PRSummary[]> {
         headSha: pr.head.sha,
         state: pr.state,
         merged: false,
+        createdAt: pr.created_at,
       }))
     );
 

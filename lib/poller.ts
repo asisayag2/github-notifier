@@ -83,6 +83,7 @@ async function checkForNewPRs() {
           teams: matchResult.matchedTeams,
         }),
         status: "open",
+        openedAt: new Date(pr.createdAt),
       },
     });
 

@@ -22,3 +22,21 @@ export async function GET(
 
   return NextResponse.json(pr);
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json();
+
+  if (body.action === "dismiss") {
+    const pr = await prisma.trackedPR.update({
+      where: { id },
+      data: { status: "dismissed" },
+    });
+    return NextResponse.json(pr);
+  }
+
+  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}

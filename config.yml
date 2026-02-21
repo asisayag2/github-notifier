@@ -19,6 +19,13 @@ interests:
     - "pricing"
     - "PDP"
     - "Cedar"
+    - "Provisioning"
+    - "Sub-account"
+    - "Sub_account"
+    - "subscription"
+    - "account"
+    - "organization"
+    - "template"
   teams:
     - name: accounts
       ownership_file: server/config/teams/accounts.yml

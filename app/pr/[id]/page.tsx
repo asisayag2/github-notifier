@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/app/components/status-badge";
 import { MatchBadge } from "@/app/components/match-badge";
 import { TimeAgo } from "@/app/components/time-ago";
+import { DismissButton } from "@/app/components/dismiss-button";
 
 export const dynamic = "force-dynamic";
 
@@ -52,19 +53,24 @@ export default async function PRDetailPage({
             </div>
             <h1 className="text-xl font-bold">{pr.title}</h1>
           </div>
-          <a
-            href={pr.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            View on GitHub
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            {pr.status !== "dismissed" && (
+              <DismissButton prId={pr.id} />
+            )}
+            <a
+              href={pr.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              View on GitHub
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
@@ -77,8 +83,8 @@ export default async function PRDetailPage({
             <code className="text-xs bg-background px-1.5 py-0.5 rounded">{pr.branch}</code>
           </div>
           <div>
-            <span className="text-muted block">Created</span>
-            <TimeAgo date={pr.createdAt} />
+            <span className="text-muted block">Opened</span>
+            <TimeAgo date={pr.openedAt ?? pr.createdAt} />
           </div>
           <div>
             <span className="text-muted block">Last Update</span>

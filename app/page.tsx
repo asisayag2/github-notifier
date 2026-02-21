@@ -19,7 +19,10 @@ export default async function DashboardPage({
   const { status } = await searchParams;
   const filter = status || "all";
 
-  const where = filter !== "all" ? { status: filter } : {};
+  const where =
+    filter === "all"
+      ? { status: { not: "dismissed" } }
+      : { status: filter };
 
   const prs = await prisma.trackedPR.findMany({
     where,
@@ -49,11 +52,12 @@ export default async function DashboardPage({
         </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-5 gap-4 mb-8">
         <StatCard label="Total Tracked" value={total} />
         <StatCard label="Open" value={countMap["open"] || 0} color="text-accent" />
         <StatCard label="Merged" value={countMap["merged"] || 0} color="text-merged" />
         <StatCard label="Closed" value={countMap["closed"] || 0} color="text-danger" />
+        <StatCard label="Dismissed" value={countMap["dismissed"] || 0} color="text-muted" />
       </div>
 
       <FilterTabs current={filter} counts={countMap} total={total} />
@@ -115,7 +119,12 @@ export default async function DashboardPage({
                     )}
                   </div>
                   <div className="text-right text-sm text-muted shrink-0">
-                    <TimeAgo date={pr.updatedAt} />
+                    <p className="text-xs">
+                      Opened <TimeAgo date={pr.openedAt ?? pr.createdAt} />
+                    </p>
+                    <p className="text-xs mt-1">
+                      Updated <TimeAgo date={pr.updatedAt} />
+                    </p>
                     {pr.changes.length > 0 && (
                       <p className="text-xs mt-1">
                         {pr.changes.length} update(s)
