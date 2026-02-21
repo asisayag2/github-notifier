@@ -3,16 +3,30 @@ github:
 
 interests:
   keywords:
-    - "breaking change"
+    - "permissions"
     - "migration"
-    - "deprecation"
+    - "authntication"
     - "accounts"
+    - "user"
+    - "auth"
+    - "authorization"
+    - "CSAM"
+    - "notification"
+    - "email"
+    - "billing"
+    - "recurly"
+    - "usage"
+    - "pricing"
+    - "PDP"
+    - "Cedar"
   teams:
     - name: accounts
       ownership_file: server/config/teams/accounts.yml
+    - name: billing
+      ownership_file: server/config/teams/billing.yml
 
 notifications:
-  email_to: "you@example.com"
+  email_to: "asi@cloudinary.com"
   on_new_pr: true
   on_code_change: true
   on_merge: true
