@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TrackedPR {
+  id           String     @id @default(cuid())
+  prNumber     Int        @unique
+  title        String
+  author       String
+  url          String
+  branch       String
+  matchReason  String
+  matchDetails String
+  status       String     @default("open")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  mergedAt     DateTime?
+  changes      PRChange[]
+}
+
+model PRChange {
+  id          String    @id @default(cuid())
+  trackedPR   TrackedPR @relation(fields: [trackedPRId], references: [id], onDelete: Cascade)
+  trackedPRId String
+  commitSha   String
+  summary     String
+  filesChanged String
+  diffStats   String
+  notifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}

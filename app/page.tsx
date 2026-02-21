@@ -1,65 +1,150 @@
-import Image from "next/image";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { StatusBadge } from "./components/status-badge";
+import { MatchBadge } from "./components/match-badge";
+import { FilterTabs } from "./components/filter-tabs";
+import { TimeAgo } from "./components/time-ago";
 
-export default function Home() {
+interface SearchParams {
+  status?: string;
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { status } = await searchParams;
+  const filter = status || "all";
+
+  const where = filter !== "all" ? { status: filter } : {};
+
+  const prs = await prisma.trackedPR.findMany({
+    where,
+    include: {
+      changes: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  const counts = await prisma.trackedPR.groupBy({
+    by: ["status"],
+    _count: true,
+  });
+
+  const total = counts.reduce((sum, c) => sum + c._count, 0);
+  const countMap = Object.fromEntries(counts.map((c) => [c.status, c._count]));
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-1">Tracked Pull Requests</h1>
+        <p className="text-muted text-sm">
+          Monitoring PRs that match your interest criteria
+        </p>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <StatCard label="Total Tracked" value={total} />
+        <StatCard label="Open" value={countMap["open"] || 0} color="text-accent" />
+        <StatCard label="Merged" value={countMap["merged"] || 0} color="text-merged" />
+        <StatCard label="Closed" value={countMap["closed"] || 0} color="text-danger" />
+      </div>
+
+      <FilterTabs current={filter} counts={countMap} total={total} />
+
+      {prs.length === 0 ? (
+        <div className="text-center py-16 text-muted">
+          <svg className="mx-auto mb-4 w-12 h-12 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="text-lg font-medium">No tracked PRs yet</p>
+          <p className="text-sm mt-1">
+            Interesting PRs will appear here when they match your configured keywords or team ownership rules.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      ) : (
+        <div className="space-y-3">
+          {prs.map((pr) => {
+            const matchDetails = JSON.parse(pr.matchDetails || "{}");
+            const lastChange = pr.changes[0];
+
+            return (
+              <Link
+                key={pr.id}
+                href={`/pr/${pr.id}`}
+                className="block bg-card border border-card-border rounded-lg p-4 hover:border-accent transition-colors"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-muted text-sm font-mono">
+                        #{pr.prNumber}
+                      </span>
+                      <StatusBadge status={pr.status} />
+                      <MatchBadge reason={pr.matchReason} />
+                    </div>
+                    <h3 className="font-semibold truncate">{pr.title}</h3>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-muted">
+                      <span>by {pr.author}</span>
+                      <span className="font-mono text-xs bg-background px-1.5 py-0.5 rounded">
+                        {pr.branch}
+                      </span>
+                      {lastChange && (
+                        <span>{lastChange.diffStats}</span>
+                      )}
+                    </div>
+                    {matchDetails.keywords?.length > 0 && (
+                      <div className="flex gap-1.5 mt-2">
+                        {matchDetails.keywords.map((kw: string) => (
+                          <span
+                            key={kw}
+                            className="text-xs bg-warning/10 text-warning px-2 py-0.5 rounded-full"
+                          >
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right text-sm text-muted shrink-0">
+                    <TimeAgo date={pr.updatedAt} />
+                    {pr.changes.length > 0 && (
+                      <p className="text-xs mt-1">
+                        {pr.changes.length} update(s)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-      </main>
+      )}
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) {
+  return (
+    <div className="bg-card border border-card-border rounded-lg p-4">
+      <p className="text-sm text-muted">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${color || ""}`}>{value}</p>
     </div>
   );
 }

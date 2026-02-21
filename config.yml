@@ -1,0 +1,18 @@
+github:
+  repo: cloudinaryLtd/cloudinary
+
+interests:
+  keywords:
+    - "breaking change"
+    - "migration"
+    - "deprecation"
+    - "accounts"
+  teams:
+    - name: accounts
+      ownership_file: server/config/teams/accounts.yml
+
+notifications:
+  email_to: "you@example.com"
+  on_new_pr: true
+  on_code_change: true
+  on_merge: true
