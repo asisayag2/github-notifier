@@ -15,6 +15,7 @@ model TrackedPR {
   author       String
   url          String
   branch       String
+  description  String     @default("")
   matchReason  String
   matchDetails String
   status       String     @default("open")

@@ -38,5 +38,13 @@ export async function PATCH(
     return NextResponse.json(pr);
   }
 
+  if (body.action === "retrack") {
+    const pr = await prisma.trackedPR.update({
+      where: { id },
+      data: { status: "open" },
+    });
+    return NextResponse.json(pr);
+  }
+
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }

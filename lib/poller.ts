@@ -85,6 +85,7 @@ async function checkForNewPRs() {
       data: {
         prNumber: pr.number,
         title: pr.title,
+        description: pr.body || "",
         author: pr.author,
         url: pr.url,
         branch: pr.branch,

@@ -4,12 +4,15 @@ import { StatusBadge } from "./components/status-badge";
 import { MatchBadge } from "./components/match-badge";
 import { FilterTabs } from "./components/filter-tabs";
 import { TimeAgo } from "./components/time-ago";
+import { DismissButton } from "./components/dismiss-button";
 
 interface SearchParams {
   status?: string;
 }
 
 export const dynamic = "force-dynamic";
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export default async function DashboardPage({
   searchParams,
@@ -32,7 +35,7 @@ export default async function DashboardPage({
         take: 1,
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { openedAt: "asc" },
   });
 
   const counts = await prisma.trackedPR.groupBy({
@@ -42,6 +45,7 @@ export default async function DashboardPage({
 
   const total = counts.reduce((sum, c) => sum + c._count, 0);
   const countMap = Object.fromEntries(counts.map((c) => [c.status, c._count]));
+  const now = Date.now();
 
   return (
     <div>
@@ -79,21 +83,27 @@ export default async function DashboardPage({
           {prs.map((pr) => {
             const matchDetails = JSON.parse(pr.matchDetails || "{}");
             const lastChange = pr.changes[0];
+            const openedDate = pr.openedAt ?? pr.createdAt;
+            const isNew = now - new Date(openedDate).getTime() < ONE_DAY_MS;
 
             return (
-              <Link
+              <div
                 key={pr.id}
-                href={`/pr/${pr.id}`}
-                className="block bg-card border border-card-border rounded-lg p-4 hover:border-accent transition-colors"
+                className="bg-card border border-card-border rounded-lg p-4 hover:border-accent transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
+                  <Link href={`/pr/${pr.id}`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-muted text-sm font-mono">
                         #{pr.prNumber}
                       </span>
                       <StatusBadge status={pr.status} />
                       <MatchBadge reason={pr.matchReason} />
+                      {isNew && (
+                        <span className="text-xs bg-accent/15 text-accent font-semibold px-2 py-0.5 rounded-full">
+                          New
+                        </span>
+                      )}
                     </div>
                     <h3 className="font-semibold truncate">{pr.title}</h3>
                     <div className="flex items-center gap-3 mt-2 text-sm text-muted">
@@ -117,22 +127,27 @@ export default async function DashboardPage({
                         ))}
                       </div>
                     )}
-                  </div>
-                  <div className="text-right text-sm text-muted shrink-0">
-                    <p className="text-xs">
-                      Opened <TimeAgo date={pr.openedAt ?? pr.createdAt} />
-                    </p>
-                    <p className="text-xs mt-1">
-                      Updated <TimeAgo date={pr.updatedAt} />
-                    </p>
-                    {pr.changes.length > 0 && (
-                      <p className="text-xs mt-1">
-                        {pr.changes.length} update(s)
+                  </Link>
+                  <div className="flex items-start gap-3 shrink-0">
+                    <div className="text-right text-sm text-muted">
+                      <p className="text-xs">
+                        Opened <TimeAgo date={openedDate} />
                       </p>
+                      <p className="text-xs mt-1">
+                        Updated <TimeAgo date={pr.updatedAt} />
+                      </p>
+                      {pr.changes.length > 0 && (
+                        <p className="text-xs mt-1">
+                          {pr.changes.length} update(s)
+                        </p>
+                      )}
+                    </div>
+                    {pr.status !== "dismissed" && (
+                      <DismissButton prId={pr.id} compact />
                     )}
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

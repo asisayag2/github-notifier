@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/app/components/status-badge";
 import { MatchBadge } from "@/app/components/match-badge";
 import { TimeAgo } from "@/app/components/time-ago";
-import { DismissButton } from "@/app/components/dismiss-button";
+import { DismissButton, RetrackButton } from "@/app/components/dismiss-button";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,9 @@ export default async function PRDetailPage({
             <h1 className="text-xl font-bold">{pr.title}</h1>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {pr.status !== "dismissed" && (
+            {pr.status === "dismissed" ? (
+              <RetrackButton prId={pr.id} />
+            ) : (
               <DismissButton prId={pr.id} />
             )}
             <a
@@ -91,6 +93,15 @@ export default async function PRDetailPage({
             <TimeAgo date={pr.updatedAt} />
           </div>
         </div>
+
+        {pr.description && (
+          <div className="mt-4 pt-4 border-t border-card-border">
+            <h3 className="text-sm font-medium text-muted mb-2">Description</h3>
+            <div className="text-sm whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
+              {pr.description}
+            </div>
+          </div>
+        )}
 
         {(matchDetails.keywords?.length > 0 || matchDetails.teams?.length > 0) && (
           <div className="mt-4 pt-4 border-t border-card-border">
