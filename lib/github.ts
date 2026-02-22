@@ -32,6 +32,7 @@ export interface PRSummary {
   state: string;
   merged: boolean;
   createdAt: string;
+  requestedReviewers: string[];
 }
 
 export async function listOpenPRs(): Promise<PRSummary[]> {
@@ -66,6 +67,9 @@ export async function listOpenPRs(): Promise<PRSummary[]> {
         state: pr.state,
         merged: false,
         createdAt: pr.created_at,
+        requestedReviewers: (pr.requested_reviewers || [])
+          .map((r) => r?.login)
+          .filter((l): l is string => !!l),
       }))
     );
 
@@ -78,7 +82,7 @@ export async function listOpenPRs(): Promise<PRSummary[]> {
 
 export async function getPRState(
   prNumber: number
-): Promise<{ state: string; merged: boolean; headSha: string; title: string }> {
+): Promise<{ state: string; merged: boolean; headSha: string; title: string; reviewers: string[] }> {
   const octokit = getOctokit();
   const { owner, repo } = getRepoOwnerAndName();
 
@@ -93,6 +97,9 @@ export async function getPRState(
     merged: data.merged,
     headSha: data.head.sha,
     title: data.title,
+    reviewers: (data.requested_reviewers || [])
+      .map((r) => r?.login)
+      .filter((l): l is string => !!l),
   };
 }
 

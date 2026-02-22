@@ -6,17 +6,19 @@ interface FilterTabsProps {
   current: string;
   counts: Record<string, number>;
   total: number;
+  newCount?: number;
 }
 
 const tabs = [
   { key: "all", label: "All" },
+  { key: "new", label: "New" },
   { key: "open", label: "Open" },
   { key: "merged", label: "Merged" },
   { key: "closed", label: "Closed" },
   { key: "dismissed", label: "Dismissed" },
 ];
 
-export function FilterTabs({ current, counts, total }: FilterTabsProps) {
+export function FilterTabs({ current, counts, total, newCount }: FilterTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -33,7 +35,7 @@ export function FilterTabs({ current, counts, total }: FilterTabsProps) {
   return (
     <div className="flex gap-1 mb-6 bg-card border border-card-border rounded-lg p-1">
       {tabs.map((tab) => {
-        const count = tab.key === "all" ? total : counts[tab.key] || 0;
+        const count = tab.key === "all" ? total : tab.key === "new" ? (newCount ?? 0) : counts[tab.key] || 0;
         const isActive = current === tab.key;
 
         return (

@@ -86,6 +86,7 @@ async function checkForNewPRs() {
         prNumber: pr.number,
         title: pr.title,
         description: pr.body || "",
+        reviewers: JSON.stringify(pr.requestedReviewers),
         author: pr.author,
         url: pr.url,
         branch: pr.branch,
@@ -199,6 +200,7 @@ async function checkTrackedPRs() {
       where: { prNumber: tracked.prNumber },
       data: {
         title: current.title || tracked.title,
+        reviewers: JSON.stringify(current.reviewers),
         updatedAt: new Date(),
       },
     });

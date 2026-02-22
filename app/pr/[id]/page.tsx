@@ -29,6 +29,7 @@ export default async function PRDetailPage({
   }
 
   const matchDetails = JSON.parse(pr.matchDetails || "{}");
+  const reviewers: string[] = pr.reviewers ? JSON.parse(pr.reviewers) : [];
 
   return (
     <div>
@@ -75,7 +76,7 @@ export default async function PRDetailPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
           <div>
             <span className="text-muted block">Author</span>
             <span className="font-medium">{pr.author}</span>
@@ -91,6 +92,14 @@ export default async function PRDetailPage({
           <div>
             <span className="text-muted block">Last Update</span>
             <TimeAgo date={pr.updatedAt} />
+          </div>
+          <div>
+            <span className="text-muted block">Reviewer</span>
+            {reviewers.length > 0 ? (
+              <span className="font-medium">{reviewers.join(", ")}</span>
+            ) : (
+              <span className="text-warning">No reviewer</span>
+            )}
           </div>
         </div>
 

@@ -20,12 +20,16 @@ export default async function DashboardPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { status } = await searchParams;
-  const filter = status || "all";
+  const filter = status || "open";
+
+  const cutoff = new Date(Date.now() - ONE_DAY_MS);
 
   const where =
     filter === "all"
       ? { status: { not: "dismissed" } }
-      : { status: filter };
+      : filter === "new"
+        ? { openedAt: { gte: cutoff }, status: { not: "dismissed" } }
+        : { status: filter };
 
   const prs = await prisma.trackedPR.findMany({
     where,
@@ -47,6 +51,10 @@ export default async function DashboardPage({
   const countMap = Object.fromEntries(counts.map((c) => [c.status, c._count]));
   const now = Date.now();
 
+  const newCount = await prisma.trackedPR.count({
+    where: { openedAt: { gte: cutoff }, status: { not: "dismissed" } },
+  });
+
   return (
     <div>
       <div className="mb-8">
@@ -64,7 +72,7 @@ export default async function DashboardPage({
         <StatCard label="Dismissed" value={countMap["dismissed"] || 0} color="text-muted" />
       </div>
 
-      <FilterTabs current={filter} counts={countMap} total={total} />
+      <FilterTabs current={filter} counts={countMap} total={total} newCount={newCount} />
 
       {prs.length === 0 ? (
         <div className="text-center py-16 text-muted">
@@ -85,6 +93,7 @@ export default async function DashboardPage({
             const lastChange = pr.changes[0];
             const openedDate = pr.openedAt ?? pr.createdAt;
             const isNew = now - new Date(openedDate).getTime() < ONE_DAY_MS;
+            const reviewers: string[] = pr.reviewers ? JSON.parse(pr.reviewers) : [];
 
             return (
               <div
@@ -114,6 +123,11 @@ export default async function DashboardPage({
                       {lastChange && (
                         <span>{lastChange.diffStats}</span>
                       )}
+                      <span className={reviewers.length > 0 ? "" : "text-warning"}>
+                        {reviewers.length > 0
+                          ? `👤 ${reviewers.join(", ")}`
+                          : "No reviewer"}
+                      </span>
                     </div>
                     {matchDetails.keywords?.length > 0 && (
                       <div className="flex gap-1.5 mt-2">
