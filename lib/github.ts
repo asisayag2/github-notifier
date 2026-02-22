@@ -86,20 +86,27 @@ export async function getPRState(
   const octokit = getOctokit();
   const { owner, repo } = getRepoOwnerAndName();
 
-  const { data } = await octokit.pulls.get({
-    owner,
-    repo,
-    pull_number: prNumber,
-  });
+  const [{ data }, { data: reviews }] = await Promise.all([
+    octokit.pulls.get({ owner, repo, pull_number: prNumber }),
+    octokit.pulls.listReviews({ owner, repo, pull_number: prNumber }),
+  ]);
+
+  const requested = (data.requested_reviewers || [])
+    .map((r) => r?.login)
+    .filter((l): l is string => !!l);
+
+  const submitted = reviews
+    .map((r) => r.user?.login)
+    .filter((l): l is string => !!l);
+
+  const allReviewers = [...new Set([...requested, ...submitted])];
 
   return {
     state: data.state,
     merged: data.merged,
     headSha: data.head.sha,
     title: data.title,
-    reviewers: (data.requested_reviewers || [])
-      .map((r) => r?.login)
-      .filter((l): l is string => !!l),
+    reviewers: allReviewers,
   };
 }
 

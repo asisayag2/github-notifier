@@ -171,6 +171,11 @@ async function checkTrackedPRs() {
       continue;
     }
 
+    await prisma.trackedPR.update({
+      where: { prNumber: tracked.prNumber },
+      data: { reviewers: JSON.stringify(current.reviewers) },
+    });
+
     const lastKnownSha = tracked.changes[0]?.commitSha;
     if (lastKnownSha === current.headSha) continue;
 
