@@ -104,7 +104,11 @@ export default async function DashboardPage({
             return (
               <div
                 key={pr.id}
-                className="bg-card border border-card-border rounded-lg p-4 hover:border-accent transition-colors"
+                className={`border rounded-lg p-4 transition-colors ${
+                  pr.isDraft
+                    ? "bg-card/50 border-card-border/60 opacity-70 hover:opacity-90"
+                    : "bg-card border-card-border hover:border-accent"
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <Link href={`/pr/${pr.id}`} className="flex-1 min-w-0">
