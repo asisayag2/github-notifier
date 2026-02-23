@@ -5,9 +5,11 @@ import { MatchBadge } from "./components/match-badge";
 import { FilterTabs } from "./components/filter-tabs";
 import { TimeAgo } from "./components/time-ago";
 import { DismissButton } from "./components/dismiss-button";
+import { SortToggle } from "./components/sort-toggle";
 
 interface SearchParams {
   status?: string;
+  sort?: string;
 }
 
 export const dynamic = "force-dynamic";
@@ -19,8 +21,9 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { status } = await searchParams;
+  const { status, sort } = await searchParams;
   const filter = status || "open";
+  const sortOrder = sort === "desc" ? "desc" : "asc";
 
   const cutoff = new Date(Date.now() - ONE_DAY_MS);
 
@@ -39,7 +42,7 @@ export default async function DashboardPage({
         take: 1,
       },
     },
-    orderBy: { openedAt: "asc" },
+    orderBy: { openedAt: sortOrder },
   });
 
   const counts = await prisma.trackedPR.groupBy({
@@ -72,7 +75,10 @@ export default async function DashboardPage({
         <StatCard label="Dismissed" value={countMap["dismissed"] || 0} color="text-muted" />
       </div>
 
-      <FilterTabs current={filter} counts={countMap} total={total} newCount={newCount} />
+      <div className="flex items-center justify-between mb-6">
+        <FilterTabs current={filter} counts={countMap} total={total} newCount={newCount} />
+        <SortToggle current={sortOrder} />
+      </div>
 
       {prs.length === 0 ? (
         <div className="text-center py-16 text-muted">
@@ -107,6 +113,11 @@ export default async function DashboardPage({
                         #{pr.prNumber}
                       </span>
                       <StatusBadge status={pr.status} />
+                      {pr.isDraft && (
+                        <span className="text-xs bg-muted/15 text-muted font-semibold px-2 py-0.5 rounded-full">
+                          Draft
+                        </span>
+                      )}
                       <MatchBadge reason={pr.matchReason} />
                       {isNew && (
                         <span className="text-xs bg-accent/15 text-accent font-semibold px-2 py-0.5 rounded-full">
@@ -156,6 +167,20 @@ export default async function DashboardPage({
                         </p>
                       )}
                     </div>
+                    <a
+                      href={pr.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-muted hover:text-accent transition-colors p-1"
+                      title="Open on GitHub"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
                     {pr.status !== "dismissed" && (
                       <DismissButton prId={pr.id} compact />
                     )}

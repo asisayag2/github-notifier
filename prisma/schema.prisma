@@ -17,6 +17,7 @@ model TrackedPR {
   branch       String
   description  String     @default("")
   reviewers    String     @default("")
+  isDraft      Boolean    @default(false)
   matchReason  String
   matchDetails String
   status       String     @default("open")

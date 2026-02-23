@@ -33,7 +33,7 @@ export function FilterTabs({ current, counts, total, newCount }: FilterTabsProps
   }
 
   return (
-    <div className="flex gap-1 mb-6 bg-card border border-card-border rounded-lg p-1">
+    <div className="flex gap-1 bg-card border border-card-border rounded-lg p-1">
       {tabs.map((tab) => {
         const count = tab.key === "all" ? total : tab.key === "new" ? (newCount ?? 0) : counts[tab.key] || 0;
         const isActive = current === tab.key;

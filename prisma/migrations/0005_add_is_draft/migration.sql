@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "TrackedPR" ADD COLUMN "isDraft" BOOLEAN NOT NULL DEFAULT false;

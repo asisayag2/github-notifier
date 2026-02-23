@@ -50,6 +50,11 @@ export default async function PRDetailPage({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-muted font-mono">#{pr.prNumber}</span>
               <StatusBadge status={pr.status} />
+              {pr.isDraft && (
+                <span className="text-xs bg-muted/15 text-muted font-semibold px-2 py-0.5 rounded-full">
+                  Draft
+                </span>
+              )}
               <MatchBadge reason={pr.matchReason} />
             </div>
             <h1 className="text-xl font-bold">{pr.title}</h1>

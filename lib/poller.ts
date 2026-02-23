@@ -40,11 +40,12 @@ export function stopPolling() {
 
 async function poll() {
   console.log(`[Poller] Polling at ${new Date().toISOString()}`);
-  await checkForNewPRs();
+  const openPRNumbers = await checkForNewPRs();
+  await syncStatuses(openPRNumbers);
   await checkTrackedPRs();
 }
 
-async function checkForNewPRs() {
+async function checkForNewPRs(): Promise<Set<number>> {
   const openPRs = await listOpenPRs();
 
   const trackedNumbers = new Set(
@@ -96,6 +97,7 @@ async function checkForNewPRs() {
           teams: matchResult.matchedTeams,
         }),
         status: "open",
+        isDraft: pr.draft,
         openedAt: new Date(pr.createdAt),
       },
     });
@@ -118,6 +120,52 @@ async function checkForNewPRs() {
     }
 
     processed++;
+  }
+
+  return new Set(openPRs.map((pr) => pr.number));
+}
+
+async function syncStatuses(openPRNumbers: Set<number>) {
+  const trackedOpen = await prisma.trackedPR.findMany({
+    where: { status: "open" },
+    select: { id: true, prNumber: true, title: true, author: true, url: true },
+  });
+
+  const stale = trackedOpen.filter((pr) => !openPRNumbers.has(pr.prNumber));
+  if (stale.length === 0) return;
+
+  console.log(`[Poller] Found ${stale.length} tracked PRs no longer open on GitHub, syncing statuses`);
+
+  for (const pr of stale) {
+    try {
+      const current = await getPRState(pr.prNumber);
+      if (current.state === "closed") {
+        const newStatus = current.merged ? "merged" : "closed";
+        console.log(`[Poller] PR #${pr.prNumber} status synced to ${newStatus}`);
+        await prisma.trackedPR.update({
+          where: { id: pr.id },
+          data: {
+            status: newStatus,
+            mergedAt: current.merged ? new Date() : null,
+            reviewers: JSON.stringify(current.reviewers),
+          },
+        });
+        if (current.merged) {
+          try {
+            await sendMergeEmail({
+              prNumber: pr.prNumber,
+              title: pr.title,
+              author: pr.author,
+              url: pr.url,
+            });
+          } catch (emailErr) {
+            console.error(`[Poller] Failed to send merge email for PR #${pr.prNumber}:`, emailErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[Poller] Failed to sync status for PR #${pr.prNumber}:`, err);
+    }
   }
 }
 
@@ -173,7 +221,10 @@ async function checkTrackedPRs() {
 
     await prisma.trackedPR.update({
       where: { prNumber: tracked.prNumber },
-      data: { reviewers: JSON.stringify(current.reviewers) },
+      data: {
+        reviewers: JSON.stringify(current.reviewers),
+        isDraft: current.draft,
+      },
     });
 
     const lastKnownSha = tracked.changes[0]?.commitSha;
