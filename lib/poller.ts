@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { listOpenPRs, getPRFiles, getPRDetails, getPRState } from "./github";
+import { listOpenPRs, getPRFiles, getPRDetails, getPRState, type PRSummary } from "./github";
 import { checkInterest } from "./interest-matcher";
 import {
   sendNewPREmail,
@@ -40,12 +40,14 @@ export function stopPolling() {
 
 async function poll() {
   console.log(`[Poller] Polling at ${new Date().toISOString()}`);
-  const openPRNumbers = await checkForNewPRs();
+  const openPRs = await checkForNewPRs();
+  const openPRNumbers = new Set(openPRs.map((pr) => pr.number));
+  await bulkUpdateFromListData(openPRs);
   await syncStatuses(openPRNumbers);
   await checkTrackedPRs();
 }
 
-async function checkForNewPRs(): Promise<Set<number>> {
+async function checkForNewPRs(): Promise<PRSummary[]> {
   const openPRs = await listOpenPRs();
 
   const trackedNumbers = new Set(
@@ -122,7 +124,44 @@ async function checkForNewPRs(): Promise<Set<number>> {
     processed++;
   }
 
-  return new Set(openPRs.map((pr) => pr.number));
+  return openPRs;
+}
+
+async function bulkUpdateFromListData(openPRs: PRSummary[]) {
+  const prMap = new Map(openPRs.map((pr) => [pr.number, pr]));
+
+  const trackedOpen = await prisma.trackedPR.findMany({
+    where: { status: "open" },
+    select: { id: true, prNumber: true, reviewers: true, isDraft: true },
+  });
+
+  let updated = 0;
+  for (const tracked of trackedOpen) {
+    const ghPR = prMap.get(tracked.prNumber);
+    if (!ghPR) continue;
+
+    const currentReviewers = tracked.reviewers || "[]";
+    const existingReviewers: string[] = currentReviewers ? JSON.parse(currentReviewers) : [];
+    const freshReviewers = [...new Set([...existingReviewers, ...ghPR.requestedReviewers])];
+    const needsUpdate =
+      tracked.isDraft !== ghPR.draft ||
+      JSON.stringify(freshReviewers.sort()) !== JSON.stringify(existingReviewers.sort());
+
+    if (needsUpdate) {
+      await prisma.trackedPR.update({
+        where: { id: tracked.id },
+        data: {
+          isDraft: ghPR.draft,
+          reviewers: JSON.stringify(freshReviewers),
+        },
+      });
+      updated++;
+    }
+  }
+
+  if (updated > 0) {
+    console.log(`[Poller] Bulk-updated draft/reviewers for ${updated} tracked PRs`);
+  }
 }
 
 async function syncStatuses(openPRNumbers: Set<number>) {
