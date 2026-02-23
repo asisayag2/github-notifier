@@ -171,7 +171,6 @@ export default async function DashboardPage({
                       href={pr.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
                       className="text-muted hover:text-accent transition-colors p-1"
                       title="Open on GitHub"
                     >
