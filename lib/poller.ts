@@ -108,6 +108,7 @@ async function checkForNewPRs(): Promise<PRSummary[]> {
       await sendNewPREmail({
         prNumber: pr.number,
         title: pr.title,
+        body: pr.body || "",
         author: pr.author,
         url: pr.url,
         branch: pr.branch,

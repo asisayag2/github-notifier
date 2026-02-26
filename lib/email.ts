@@ -24,6 +24,7 @@ function getTransporter(): nodemailer.Transporter {
 interface NewPREmailData {
   prNumber: number;
   title: string;
+  body: string;
   author: string;
   url: string;
   branch: string;
@@ -73,6 +74,13 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
             </td>
           </tr>
         </table>
+
+        ${formatPRBody(data.body) ? `
+        <div style="margin: 16px 0;">
+          <strong style="color: #666;">Description</strong>
+          <div style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 14px; line-height: 1.5; overflow-wrap: break-word;">${formatPRBody(data.body)}</div>
+        </div>
+        ` : ""}
 
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin: 16px 0;">
           <strong>Why this is interesting:</strong>
@@ -183,6 +191,21 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
       </div>
     `,
   });
+}
+
+function formatPRBody(body: string): string {
+  if (!body.trim()) return "";
+  const escaped = body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const withBreaks = escaped.replace(/\n/g, "<br>");
+  const maxLen = 3000;
+  const truncated = withBreaks.length > maxLen
+    ? withBreaks.slice(0, maxLen) + "<br><em>… (truncated)</em>"
+    : withBreaks;
+  return truncated;
 }
 
 function formatMatchDetails(match: MatchResult): string {
