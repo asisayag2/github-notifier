@@ -110,6 +110,7 @@ async function handlePROpened(payload: Record<string, unknown>) {
   await sendNewPREmail({
     prNumber,
     title,
+    body,
     author,
     url,
     branch,
