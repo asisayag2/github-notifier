@@ -1,17 +1,24 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { loadConfig } from "./config";
 import type { MatchResult } from "./interest-matcher";
 
-let resendClient: Resend | null = null;
+let transporter: nodemailer.Transporter | null = null;
 
-function getResend(): Resend {
-  if (!resendClient) {
-    if (!process.env.RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY environment variable is required");
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    if (!user || !pass) {
+      throw new Error("SMTP_USER and SMTP_PASS environment variables are required for Gmail");
     }
-    resendClient = new Resend(process.env.RESEND_API_KEY);
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: { user, pass },
+    });
   }
-  return resendClient;
+  return transporter;
 }
 
 interface NewPREmailData {
@@ -30,11 +37,12 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
   const config = loadConfig();
   if (!config.notifications.on_new_pr) return;
 
-  const resend = getResend();
+  const transport = getTransporter();
   const matchDetails = formatMatchDetails(data.matchResult);
+  const from = process.env.SMTP_USER!;
 
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
+  await transport.sendMail({
+    from: `GitHub Notifier <${from}>`,
     to: config.notifications.email_to,
     subject: `[PR Notifier] Interesting PR #${data.prNumber}: ${data.title}`,
     html: `
@@ -77,9 +85,6 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
       </div>
     `,
   });
-  if (error) {
-    throw new Error(`Resend new PR email failed: ${error.message} (${error.name})`);
-  }
 }
 
 interface CodeChangeEmailData {
@@ -98,7 +103,8 @@ export async function sendCodeChangeEmail(
   const config = loadConfig();
   if (!config.notifications.on_code_change) return;
 
-  const resend = getResend();
+  const transport = getTransporter();
+  const from = process.env.SMTP_USER!;
 
   const filesList = data.filesChanged
     .slice(0, 20)
@@ -109,8 +115,8 @@ export async function sendCodeChangeEmail(
       ? `<li>...and ${data.filesChanged.length - 20} more</li>`
       : "";
 
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
+  await transport.sendMail({
+    from: `GitHub Notifier <${from}>`,
     to: config.notifications.email_to,
     subject: `[PR Notifier] Changes in PR #${data.prNumber}: ${data.title}`,
     html: `
@@ -138,9 +144,6 @@ export async function sendCodeChangeEmail(
       </div>
     `,
   });
-  if (error) {
-    throw new Error(`Resend code change email failed: ${error.message} (${error.name})`);
-  }
 }
 
 interface MergeEmailData {
@@ -154,10 +157,11 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
   const config = loadConfig();
   if (!config.notifications.on_merge) return;
 
-  const resend = getResend();
+  const transport = getTransporter();
+  const from = process.env.SMTP_USER!;
 
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
+  await transport.sendMail({
+    from: `GitHub Notifier <${from}>`,
     to: config.notifications.email_to,
     subject: `[PR Notifier] PR #${data.prNumber} merged: ${data.title}`,
     html: `
@@ -179,9 +183,6 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
       </div>
     `,
   });
-  if (error) {
-    throw new Error(`Resend merge email failed: ${error.message} (${error.name})`);
-  }
 }
 
 function formatMatchDetails(match: MatchResult): string {

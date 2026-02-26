@@ -16,7 +16,7 @@ A polling-based agent that monitors GitHub PRs, matches them against your intere
 
 - Docker and Docker Compose
 - GitHub Personal Access Token (classic) with `repo` scope
-- [Resend](https://resend.com) account (free tier: 100 emails/day)
+- Gmail account (for sending via SMTP; use App Password)
 
 ### 1. Clone and configure
 
@@ -30,7 +30,8 @@ Edit `.env` with your real values:
 
 ```env
 GITHUB_TOKEN=ghp_...
-RESEND_API_KEY=re_...
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
 DB_PASSWORD=choose_a_strong_password
 POLL_INTERVAL_MS=120000
 ```
@@ -105,7 +106,7 @@ The app runs in two containers:
 - **app** -- Next.js server + background poller
 - **db** -- PostgreSQL 16
 
-The poller runs inside the Next.js process (via `instrumentation.ts`) and polls the GitHub API at a configurable interval. No inbound internet traffic is required -- all connections are outbound to `api.github.com` and `api.resend.com`.
+The poller runs inside the Next.js process (via `instrumentation.ts`) and polls the GitHub API at a configurable interval. No inbound internet traffic is required -- all connections are outbound to `api.github.com` and `smtp.gmail.com`.
 
 The webhook endpoint at `/api/webhooks/github` is still available as an optional alternative if your network allows inbound GitHub traffic.
 

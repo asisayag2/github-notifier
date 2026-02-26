@@ -39,7 +39,8 @@ services:
     environment:
       DATABASE_URL: postgresql://notifier:${DB_PASSWORD_ENCODED}@db:5432/notifier
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      RESEND_API_KEY: ${RESEND_API_KEY}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
       POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-120000}
 
 volumes:
