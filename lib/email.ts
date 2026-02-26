@@ -33,7 +33,7 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
   const resend = getResend();
   const matchDetails = formatMatchDetails(data.matchResult);
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] Interesting PR #${data.prNumber}: ${data.title}`,
@@ -77,6 +77,9 @@ export async function sendNewPREmail(data: NewPREmailData): Promise<void> {
       </div>
     `,
   });
+  if (error) {
+    throw new Error(`Resend new PR email failed: ${error.message} (${error.name})`);
+  }
 }
 
 interface CodeChangeEmailData {
@@ -106,7 +109,7 @@ export async function sendCodeChangeEmail(
       ? `<li>...and ${data.filesChanged.length - 20} more</li>`
       : "";
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] Changes in PR #${data.prNumber}: ${data.title}`,
@@ -135,6 +138,9 @@ export async function sendCodeChangeEmail(
       </div>
     `,
   });
+  if (error) {
+    throw new Error(`Resend code change email failed: ${error.message} (${error.name})`);
+  }
 }
 
 interface MergeEmailData {
@@ -150,7 +156,7 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
 
   const resend = getResend();
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM || "GitHub Notifier <onboarding@resend.dev>",
     to: config.notifications.email_to,
     subject: `[PR Notifier] PR #${data.prNumber} merged: ${data.title}`,
@@ -173,6 +179,9 @@ export async function sendMergeEmail(data: MergeEmailData): Promise<void> {
       </div>
     `,
   });
+  if (error) {
+    throw new Error(`Resend merge email failed: ${error.message} (${error.name})`);
+  }
 }
 
 function formatMatchDetails(match: MatchResult): string {

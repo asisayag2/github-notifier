@@ -85,6 +85,19 @@ docker compose up -d --build
 3. Clone the repo and follow the Quick Start steps above
 4. (Optional) Set up a reverse proxy (nginx/caddy) in front of port 3000 for HTTPS
 
+### Auto-start on boot (systemd)
+
+To start the app automatically after instance reboot:
+
+```bash
+sudo cp github-notifier.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable github-notifier.service
+sudo systemctl start github-notifier.service
+```
+
+The service runs `docker compose up -d` when the system boots and `docker compose down` on shutdown.
+
 ## Architecture
 
 The app runs in two containers:
